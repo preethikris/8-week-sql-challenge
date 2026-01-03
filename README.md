@@ -1,5 +1,6 @@
-**🚀 8 Week SQL Challenge**
+##**🚀 8 Week SQL Challenge**
   End-to-end SQL case studies solving real-world business problems using advanced SQL techniques.
+--
 **🧠 Skills & Concepts Used**
 -SQL
   Joins (INNER, LEFT, RIGHT)
@@ -10,6 +11,7 @@
 -Data Analysis & Business Thinking
 -Problem Solving
 -Query Optimization
+--
 **📂 Case Studies Covered**
   Danny’s Diner
     → Customer behavior, sales metrics, loyalty analysis
@@ -27,5 +29,6 @@
     → Financial reporting & segmentation
   Fresh Segments
     → Marketing analytics & customer segmentation
+--
 **🎯 Goal of This Project**
   To strengthen my SQL and analytical skills through hands-on practice with realistic business scenarios and prepare for Data Analyst / Data Science roles.
