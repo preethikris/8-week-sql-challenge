@@ -402,3 +402,133 @@ GROUP BY sales.customer_id;
 - Total points for Customer B is 320.
 
 ***
+## BONUS QUESTIONS
+
+**Join All The Things**
+
+**Recreate the table with: customer_id, order_date, product_name, price, member (Y/N)**
+
+```sql
+SELECT
+    s.customer_id,
+    s.order_date,
+    m.product_name,
+    m.price,
+    CASE 
+        WHEN mb.join_date IS NOT NULL 
+             AND s.order_date >= mb.join_date 
+        THEN 'Y'
+        ELSE 'N'
+    END AS member
+FROM sales s
+JOIN menu m
+  ON s.product_id = m.product_id
+LEFT JOIN members mb
+  ON s.customer_id = mb.customer_id
+ORDER BY s.customer_id, s.order_date;
+```
+#### Steps:
+- Use the sales table as the base dataset
+- **Join** the menu table using 'product_id'
+- Retrieve 'product_name' and price
+- **Left join** the members table using 'customer_id'
+- Ensure non-member customers are retained
+- Compare 'order_date' with 'join_date'
+- If 'order_date' ≥ 'join_date', mark as member = 'Y'
+- Otherwise, mark as member = 'N'
+- Sort the final output by 'customer_id' and 'order_date'
+#### Answer: 
+| customer_id | order_date | product_name | price | member |
+| ----------- | ---------- | -------------| ----- | ------ |
+| A           | 2021-01-01 | sushi        | 10    | N      |
+| A           | 2021-01-01 | curry        | 15    | N      |
+| A           | 2021-01-07 | curry        | 15    | Y      |
+| A           | 2021-01-10 | ramen        | 12    | Y      |
+| A           | 2021-01-11 | ramen        | 12    | Y      |
+| A           | 2021-01-11 | ramen        | 12    | Y      |
+| B           | 2021-01-01 | curry        | 15    | N      |
+| B           | 2021-01-02 | curry        | 15    | N      |
+| B           | 2021-01-04 | sushi        | 10    | N      |
+| B           | 2021-01-11 | sushi        | 10    | Y      |
+| B           | 2021-01-16 | ramen        | 12    | Y      |
+| B           | 2021-02-01 | ramen        | 12    | Y      |
+| C           | 2021-01-01 | ramen        | 12    | N      |
+| C           | 2021-01-01 | ramen        | 12    | N      |
+| C           | 2021-01-07 | ramen        | 12    | N      |
+
+***
+
+**Rank All The Things**
+
+**Danny also requires further information about the ```ranking``` of customer products, but he purposely does not need the ranking for non-member purchases so he expects null ```ranking``` values for the records when customers are not yet part of the loyalty program.**
+
+```sql
+WITH joined_table AS (
+    SELECT
+        s.customer_id,
+        s.order_date,
+        m.product_name,
+        m.price,
+        CASE 
+            WHEN mb.join_date IS NOT NULL 
+                 AND s.order_date >= mb.join_date 
+            THEN 'Y'
+            ELSE 'N'
+        END AS member
+    FROM sales s
+    JOIN menu m
+      ON s.product_id = m.product_id
+    LEFT JOIN members mb
+      ON s.customer_id = mb.customer_id
+)
+SELECT
+    customer_id,
+    order_date,
+    product_name,
+    price,
+    member,
+    CASE 
+        WHEN member = 'Y' 
+        THEN DENSE_RANK() OVER (
+                PARTITION BY customer_id 
+                ORDER BY order_date
+             )
+        ELSE NULL
+    END AS ranking
+FROM joined_table
+ORDER BY customer_id, order_date;
+```
+#### Steps:
+- Create a base joined dataset using the 'sales', 'menu', and 'members' tables.
+- From 'sales', select 'customer_id','order_date', and 'product_id'.
+- **Join** 'menu' on 'product_id' to retrieve 'product_name' and 'price'.
+- **Left join** 'members' on 'customer_id' to retain non-member records.
+- Determine membership status using a **CASE** statement: If 'order_date' >= 'join_date', mark member = 'Y' Otherwise, mark member = 'N'
+- In the outer query, apply a window function to calculate rankings.
+- **Partition** the ranking by 'customer_id'.
+- Order the ranking by 'order_date'.
+- Apply ranking only when member = 'Y'.
+- Use **DENSE_RANK()** so: Purchases on the same date receive the same rank.Ranking numbers do not skip values.
+- Assign NULL to the ranking column for all non-member purchases.
+- Return the final result ordered by 'customer_id' and 'order_date'.
+
+#### Answer: 
+| customer_id | order_date | product_name | price | member | ranking | 
+| ----------- | ---------- | -------------| ----- | ------ |-------- |
+| A           | 2021-01-01 | sushi        | 10    | N      | NULL
+| A           | 2021-01-01 | curry        | 15    | N      | NULL
+| A           | 2021-01-07 | curry        | 15    | Y      | 1
+| A           | 2021-01-10 | ramen        | 12    | Y      | 2
+| A           | 2021-01-11 | ramen        | 12    | Y      | 3
+| A           | 2021-01-11 | ramen        | 12    | Y      | 3
+| B           | 2021-01-01 | curry        | 15    | N      | NULL
+| B           | 2021-01-02 | curry        | 15    | N      | NULL
+| B           | 2021-01-04 | sushi        | 10    | N      | NULL
+| B           | 2021-01-11 | sushi        | 10    | Y      | 1
+| B           | 2021-01-16 | ramen        | 12    | Y      | 2
+| B           | 2021-02-01 | ramen        | 12    | Y      | 3
+| C           | 2021-01-01 | ramen        | 12    | N      | NULL
+| C           | 2021-01-01 | ramen        | 12    | N      | NULL
+| C           | 2021-01-07 | ramen        | 12    | N      | NULL
+
+***
